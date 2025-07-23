@@ -1,0 +1,21 @@
+# Binaries for programs
+*.exe
+*.dll
+*.so
+*.dylib
+syno
+
+# Test binary, generated with `go test -c`
+*.test
+
+# Go module dependencies
+/vendor/
+
+# Local DB file
+*.db
+
+# Config file (if sensitive data is stored unencrypted, but we'll encrypt it)
+.synocli_config.json
+
+# Logs
+*.log

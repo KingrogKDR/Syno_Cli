@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
 )
+
+const tenMb int64 = 10 * 1024 * 1024
 
 var storeCmd = &cobra.Command{
 	Use:   "store [file]",
@@ -13,17 +16,47 @@ var storeCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		file := args[0]
-		filePath := "src/" + file
+		inputFilePath := fmt.Sprintf("src/%s", file)
+		destinationPath := fmt.Sprintf("src/%s.bak", file)
+		fileSize := getFileSize(inputFilePath)
 
-		f, err := os.Open(filePath)
+		if fileSize < tenMb {
+			finput, err := os.ReadFile(inputFilePath)
+			if err != nil {
+				defineError(err, "Error reading file")
+			}
+			if err := os.WriteFile(destinationPath, finput, 0644); err != nil {
+				defineError(err, "Error writing file")
+			}
 
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to open file: %v", err)
+		} else {
+			finput, err := os.Open(inputFilePath)
+
+			if err != nil {
+				defineError(err, "Unable to open input file")
+			}
+
+			defer func() {
+				if err := finput.Close(); err != nil {
+					defineError(err, "Unable to close input file")
+				}
+			}()
+			fout, err := os.Create(destinationPath)
+
+			if err != nil {
+				defineError(err, "Unable to open output file")
+			}
+
+			defer func() {
+				if err := fout.Close(); err != nil {
+					defineError(err, "Unable to close output file")
+				}
+			}()
+
+			if _, err := io.Copy(fout, finput); err != nil {
+				defineError(err, "Error copying file")
+			}
 		}
-
-		// open and read the file
-		// copy the contents of the file and store it in a destination at syno in a folder called backup
-		// close thefiles
 
 		return nil
 	},

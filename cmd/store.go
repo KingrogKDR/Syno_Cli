@@ -2,62 +2,42 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"os"
-
 	"github.com/spf13/cobra"
+	"google.golang.org/api/drive/v3"
+	"log"
+	"os"
+	"path/filepath"
+	"syno/misc"
+	storageconfig "syno/storageConfig"
 )
 
-const tenMb int64 = 10 * 1024 * 1024
-
 var storeCmd = &cobra.Command{
-	Use:   "store [file]",
-	Short: "Store an encrypted backup",
+	Use:   "push [file]",
+	Short: "Uploads a file to Google Drive",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		file := args[0]
-		inputFilePath := fmt.Sprintf("src/%s", file)
-		destinationPath := fmt.Sprintf("src/%s.bak", file)
-		fileSize := getFileSize(inputFilePath)
-
-		if fileSize < tenMb {
-			finput, err := os.ReadFile(inputFilePath)
-			if err != nil {
-				defineError(err, "Error reading file")
-			}
-			if err := os.WriteFile(destinationPath, finput, 0644); err != nil {
-				defineError(err, "Error writing file")
-			}
-
-		} else {
-			finput, err := os.Open(inputFilePath)
-
-			if err != nil {
-				defineError(err, "Unable to open input file")
-			}
-
-			defer func() {
-				if err := finput.Close(); err != nil {
-					defineError(err, "Unable to close input file")
-				}
-			}()
-			fout, err := os.Create(destinationPath)
-
-			if err != nil {
-				defineError(err, "Unable to open output file")
-			}
-
-			defer func() {
-				if err := fout.Close(); err != nil {
-					defineError(err, "Unable to close output file")
-				}
-			}()
-
-			if _, err := io.Copy(fout, finput); err != nil {
-				defineError(err, "Error copying file")
-			}
+		fmt.Println("Uploading ....")
+		server, err := storageconfig.GetDriveService()
+		if err != nil {
+			misc.DefineError(err, "Unable to retrieve Drive client")
+			return err
 		}
+		file_Path := args[0]
+		file, err := os.Open(file_Path)
+		baseFilename := filepath.Base(file_Path)
+		if err != nil {
+			misc.DefineError(err, "Unable to open file")
+			return err
+		}
+		defer file.Close()
 
+		driveFile, err := server.Files.Create(&drive.File{Name: baseFilename}).Media(file).Do()
+
+		if err != nil {
+			misc.DefineError(err, "Unable to upload file to google drive")
+			return err
+		}
+		log.Printf("File successfully uploaded! ID: %s, Name: %s\n", driveFile.Id, driveFile.Name)
 		return nil
 	},
 }

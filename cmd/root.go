@@ -24,6 +24,7 @@ func Execute() error {
 
 func init() {
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(storeCmd)
 	rootCmd.AddCommand(retrieveCmd)
 }

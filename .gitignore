@@ -4,6 +4,7 @@
 *.so
 *.dylib
 syno
+*.json
 
 # Test binary, generated with `go test -c`
 *.test

@@ -12,5 +12,5 @@ func init() {
 	if err != nil {
 		DefineError(err, "Unable to get user home directory")
 	}
-	PathToCredentials = filepath.Join(homeDir, "Documents", "Syno", "credentials.json")
+	PathToCredentials = filepath.Join(homeDir, "Documents", "imp", "credentials.json")
 }
